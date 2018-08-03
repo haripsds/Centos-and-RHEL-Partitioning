@@ -1,0 +1,74 @@
+Partiton in CentOs 6.5  and RHEL:
+_________________________________
+
+#User should login as a root user
+sudo su
+cd ~
+
+#Unmount the directory from which you want to take the space.
+1.umount /opt/mount1
+
+#Remove the file system of disk
+2.lvremove /dev/mapper/disk1-mount1
+
+#Remove the VG
+3.vgremove /dev/mapper/disk1           
+
+#Check space
+4.pvs       
+
+#Remove sdb                        
+5.pvremove /dev/sdb     
+   
+
+#Create File disk
+6.fdisk /dev/sdb  
+     type   m ==> More Menu
+	  n ==> Create a New Partition
+	  type p ==>select Primary partition 
+	  type 1 ==>Partition (1-4)
+	  First cylinder (1-39162,default 1) ==> Press Enter give blank
+	  Last cyclinder, +cylinder or +size{K,M,G} (1-39162, default 39162) : +229G(depends on space best odd number is suggested) ==> This is for the mount point
+	  Post Creation of partition then Type t (to change the partiton type to LVM) 
+		==> It will ask for the partion number to select ==> type 1 and enter 
+		==> Then it will ask for the HEX Code type ==> 8e to convert partiton to the LVM
+          Once everything is done then you have to save the changes you have done so type Command ==>wq then Enter                  
+
+#Create sdb directories
+7.pvcreate /dev/sdb1                
+8.pvcreate /dev/sdb2                
+
+#Create vg from sdb1
+9.vgcreate disk1 /dev/sdb1          
+
+#Check details
+10.pvdisplay                         
+11.vgs                               
+
+#Create lv from mount1 disk1
+12.lvcreate -n mount1 -L 229G disk1  
+
+#Extend the disk1 from sdb
+13.mkfs.ext4 /dev/mapper/disk1-mount1
+
+#Check details
+14.lvs                               
+15.vgs                               
+
+#Extend vg from sdb1
+16.vgextend vg00 /dev/sdb2           
+
+#Extend the to directories
+17.lvextend -L+15G /dev/vg00/usr     
+18.resize2fs /dev/mapper/vg00-usr    
+19.vgs                               
+20.lvextend -L+15G /dev/vg00/opt     
+21.resize2fs /dev/mapper/vg00-opt    
+22.lvextend -L+15G /dev/vg00/var     
+23.resize2fs /dev/mapper/vg00-var    
+24.lvextend -L+10G /dev/vg00/tmp     
+25.resize2fs /dev/mapper/vg00-tmp  
+26.mount -a (==> this is used to mount all the directory then it will show the mounted partitions)
+
+#Restart System  
+26.init 6
